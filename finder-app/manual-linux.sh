@@ -23,6 +23,9 @@ fi
 
 mkdir -p ${OUTDIR}
 
+export PATH=/home/michael/Documents/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/:$PATH
+export ARCH=arm64
+export CROSS_COMPILE=aarch64-none-linux-gnu-
 cd "$OUTDIR"
 if [ ! -d "${OUTDIR}/linux-stable" ]; then
     #Clone only if the repository does not exist.
@@ -35,6 +38,7 @@ if [ ! -e ${OUTDIR}/linux-stable/arch/${ARCH}/boot/Image ]; then
     git checkout ${KERNEL_VERSION}
 
     # TODO: Add your kernel build steps here
+    cd "$OUTDIR"
     make ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" defconfig
     make ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" -j$(nproc)
 fi
@@ -61,28 +65,36 @@ git clone git://busybox.net/busybox.git
     cd busybox
     git checkout ${BUSYBOX_VERSION}
     # TODO:  Configure busybox
+    make ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" defconfig
+    make ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" -j$(nproc)
     make ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" menuconfig
-
+    # Install BusyBox to the specified output directory
+    make ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" CONFIG_PREFIX="${OUTDIR}" install
+    # Setup permission for busybox binary
+    sudo chmod u+s bin/busybox
 else
     cd busybox
 fi
 
 # TODO: Make and install busybox
-make ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" defconfig
-make ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" -j$(nproc)
-make ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" CONFIG_PREFIX="${OUTDIR}/rootfs" install
+#make ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" defconfig
+#make ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" -j$(nproc)
+#make ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" CONFIG_PREFIX="${OUTDIR}/rootfs" install
+ls -l busybox
+
 
 echo "Library dependencies"
-${CROSS_COMPILE}readelf -a bin/busybox | grep "program interpreter"
-${CROSS_COMPILE}readelf -a bin/busybox | grep "Shared library"
+${CROSS_COMPILE}readelf -a busybox | grep "program interpreter"
+${CROSS_COMPILE}readelf -a busybox | grep "Shared library"
 
 # TODO: Add library dependencies to rootfs
-LIBS=($(ldd "${OUTDIR}/rootfs/bin/busybox" | awk '{print $3}' | grep -v "^$"))
-for lib in "${LIBS[@]}"; do
-    cp -L "$lib" "${OUTDIR}/rootfs/lib/"
-done
+#LIBS=($(ldd "${OUTDIR}/busybox" | awk '{print $3}' | grep -v "^$"))
+#for lib in "${LIBS[@]}"; do
+ #   cp -L "$lib" "${OUTDIR}/rootfs/lib/"
+#done
 
 # TODO: Make device nodes
+mkdir -p "${OUTDIR}/rootfs/dev"
 sudo mknod -m 666 "${OUTDIR}/rootfs/dev/null" c 1 3
 sudo mknod -m 666 "${OUTDIR}/rootfs/dev/tty" c 5 0
 sudo mknod -m 666 "${OUTDIR}/rootfs/dev/zero" c 1 5
@@ -105,4 +117,4 @@ sudo chown -R root:root "${OUTDIR}/rootfs"
 
 # TODO: Create initramfs.cpio.gz
 cd "${OUTDIR}/rootfs"
-find . | cpio --quiet -o -H newc | gzip -9 > "${OUTDIR}/initramfs.cpio.gz"
+find . | cpio --quiet -o -H newc | gzip -9 > "${OUTDIR}/linux-stable/arch/arm64/boot/initramfs.cpio.gz"
