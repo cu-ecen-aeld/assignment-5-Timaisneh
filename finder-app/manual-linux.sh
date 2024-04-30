@@ -76,8 +76,8 @@ git clone git://busybox.net/busybox.git
     git checkout ${BUSYBOX_VERSION}
     # TODO:  Configure busybox
     # Install BusyBox to the specified output directory
-    make ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" -j$(nproc)
-    make ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" CONFIG_PREFIX="${OUTDIR}/rootfs" install
+    #make ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" -j$(nproc)
+    #make ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" CONFIG_PREFIX="${OUTDIR}/rootfs" install
   
 
 else
@@ -85,6 +85,7 @@ else
 fi
 
 # TODO: Make and install busybox
+make ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" distclean
 make ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" defconfig
 make ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" -j$(nproc)
 make ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" CONFIG_PREFIX="${OUTDIR}/rootfs" install
@@ -135,7 +136,8 @@ cp writer $OUTDIR/rootfs/home/
 sudo chown -R root:root "${OUTDIR}/rootfs"
 
 # TODO: Create initramfs.cpio.gz
+# Creating initramfs
 cd "${OUTDIR}/rootfs"
-find . | cpio -H newc -ov --owner root:root > ${OUTDIR}/initramfs.cpio
+find . | cpio -H newc -o > ${OUTDIR}/initramfs.cpio
 cd ${OUTDIR}
 gzip -f initramfs.cpio
