@@ -1,4 +1,14 @@
 *.o
+<<<<<<< HEAD
 build/
 .vscode/
 *.log
+=======
+writer
+Test_*_Runner.c
+build/
+crosstool-ng
+aesd-build
+.vscode/
+test.sh.log
+>>>>>>> origin/master
